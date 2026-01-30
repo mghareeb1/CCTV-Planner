@@ -1,4 +1,4 @@
-name: Build APK Manual
+name: Build APK Fixed
 
 on:
   push:
@@ -6,13 +6,13 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    # 1. رجعنا نستخدم سيرفر 22.04 عشان مستقر وفيه كل الأدوات
+    runs-on: ubuntu-22.04
 
     steps:
-      # 1. تحميل ملفات المشروع
       - uses: actions/checkout@v4
 
-      # 2. تنظيف مساحة في السيرفر (عشان عملية البناء بتحتاج مساحة كبيرة)
+      # 2. تنظيف الهارد (عشان نوفر مساحة للبناء)
       - name: Free Disk Space
         run: |
           sudo rm -rf /usr/share/dotnet
@@ -20,27 +20,27 @@ jobs:
           sudo rm -rf "/usr/local/share/boost"
           sudo rm -rf "$AGENT_TOOLSDIRECTORY"
 
-      # 3. تثبيت الأدوات الضرورية (زي ما كنا بنعمل في Colab بالظبط)
+      # 3. تسطيب الأدوات (شيلنا المكتبات اللي بتعمل مشاكل)
       - name: Install System Dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
             build-essential libltdl-dev libffi-dev libssl-dev python3-dev \
             git zip unzip autoconf autogen automake libtool pkg-config \
-            zlib1g-dev openjdk-17-jdk libstdc++6 zlib1g libncurses5
+            zlib1g-dev openjdk-17-jdk
 
-      # 4. تثبيت Buildozer و Cython
-      - name: Install Buildozer & Python Libs
+      # 4. تسطيب Buildozer
+      - name: Install Buildozer
         run: |
           pip3 install --upgrade pip
           pip3 install buildozer cython==0.29.33
 
-      # 5. بدء البناء (مع الموافقة التلقائية yes)
-      - name: Run Buildozer
+      # 5. البناء (الخطوة الأهم)
+      - name: Build APK
         run: |
           yes | buildozer android debug
 
-      # 6. رفع ملف الـ APK الناتج
+      # 6. رفع الملف النهائي
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
