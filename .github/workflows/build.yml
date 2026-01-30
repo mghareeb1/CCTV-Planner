@@ -1,4 +1,4 @@
-name: Build APK
+name: Build APK Manual
 
 on:
   push:
@@ -9,20 +9,40 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # تحديثنا دي لـ v4 عشان القديمة وقفت
+      # 1. تحميل ملفات المشروع
       - uses: actions/checkout@v4
 
-      # تجهيز بيئة العمل وتشغيل Buildozer
-      - name: Build with Buildozer
-        uses: ArtemSBulgakov/buildozer-action@v1
-        id: buildozer
-        with:
-          command: buildozer android debug
-          buildozer_version: stable
+      # 2. تنظيف مساحة في السيرفر (عشان عملية البناء بتحتاج مساحة كبيرة)
+      - name: Free Disk Space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
 
-      # رفع ملف الـ APK (تحديث لـ v4)
-      - name: Upload artifacts
+      # 3. تثبيت الأدوات الضرورية (زي ما كنا بنعمل في Colab بالظبط)
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential libltdl-dev libffi-dev libssl-dev python3-dev \
+            git zip unzip autoconf autogen automake libtool pkg-config \
+            zlib1g-dev openjdk-17-jdk libstdc++6 zlib1g libncurses5
+
+      # 4. تثبيت Buildozer و Cython
+      - name: Install Buildozer & Python Libs
+        run: |
+          pip3 install --upgrade pip
+          pip3 install buildozer cython==0.29.33
+
+      # 5. بدء البناء (مع الموافقة التلقائية yes)
+      - name: Run Buildozer
+        run: |
+          yes | buildozer android debug
+
+      # 6. رفع ملف الـ APK الناتج
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: package
-          path: ${{ steps.buildozer.outputs.filename }}
+          name: CCTV-Planner-APK
+          path: bin/*.apk
