@@ -1,4 +1,4 @@
-name: Build APK Fixed
+name: Build APK Ultimate
 
 on:
   push:
@@ -6,13 +6,12 @@ on:
 
 jobs:
   build:
-    # 1. رجعنا نستخدم سيرفر 22.04 عشان مستقر وفيه كل الأدوات
     runs-on: ubuntu-22.04
 
     steps:
       - uses: actions/checkout@v4
 
-      # 2. تنظيف الهارد (عشان نوفر مساحة للبناء)
+      # 1. تنظيف الهارد (ضروري جداً)
       - name: Free Disk Space
         run: |
           sudo rm -rf /usr/share/dotnet
@@ -20,27 +19,41 @@ jobs:
           sudo rm -rf "/usr/local/share/boost"
           sudo rm -rf "$AGENT_TOOLSDIRECTORY"
 
-      # 3. تسطيب الأدوات (شيلنا المكتبات اللي بتعمل مشاكل)
+      # 2. إعداد Java 17 باستخدام الأداة الرسمية (عشان مسار JAVA_HOME يتظبط صح)
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      # 3. إعداد Python 3.10
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      # 4. تسطيب مكتبات النظام (شاملة كل حاجة ممكن يحتاجها Buildozer)
       - name: Install System Dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            build-essential libltdl-dev libffi-dev libssl-dev python3-dev \
+            build-essential libltdl-dev libffi-dev libssl-dev \
             git zip unzip autoconf autogen automake libtool pkg-config \
-            zlib1g-dev openjdk-17-jdk
+            zlib1g-dev cmake gettext \
+            libncurses5 libncursesw5 libtinfo5
 
-      # 4. تسطيب Buildozer
+      # 5. تسطيب Buildozer و Cython (الإصدار الذهبي المتوافق مع Kivy)
       - name: Install Buildozer
         run: |
-          pip3 install --upgrade pip
-          pip3 install buildozer cython==0.29.33
+          pip install --upgrade pip
+          pip install buildozer cython==0.29.33
 
-      # 5. البناء (الخطوة الأهم)
+      # 6. البناء
       - name: Build APK
         run: |
           yes | buildozer android debug
 
-      # 6. رفع الملف النهائي
+      # 7. رفع الملف
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
