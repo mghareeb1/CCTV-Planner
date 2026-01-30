@@ -45,7 +45,12 @@ def resource_path(relative_path):
         base_path = os.path.dirname(os.path.abspath(__file__))
     return os.path.join(base_path, relative_path)
 
-Window.size = (360, 640)
+from kivy.utils import platform
+
+# لو الجهاز مش أندرويد ومش آيفون (يعني كمبيوتر)، حدد الحجم
+# أما لو موبايل، سيبه ياخد راحته في الشاشة كاملة
+if platform not in ['android', 'ios']:
+    Window.size = (360, 640)
 
 # --- Base Screen ---
 class BaseScreen(MDScreen):
@@ -591,4 +596,5 @@ class CCTVPlannerApp(MDApp):
         return sm
 
 if __name__ == "__main__":
+
     CCTVPlannerApp().run()
